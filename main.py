@@ -1,7 +1,6 @@
 from collections import UserDict
 
 
-
 def deco_error(func):
     def inner(*args):
         try:
@@ -11,9 +10,10 @@ def deco_error(func):
         except KeyError:
             return f"There is no contact such in phone book. Please, use command 'Add...' first"
         except ValueError:
-            return "Not enough params"
+            return "Not enough params or wrong phone format"
 
     return inner
+
 
 class Field:
     def __init__(self, value):
@@ -35,7 +35,7 @@ class Phone(Field):
 
     def validate_phone(self):
         if not self.value.isdigit() or len(self.value) != 10:
-            raise ValueError("Некоректний формат телефону")
+            raise ValueError
 
     def __str__(self):
         return str(self.value)
@@ -54,7 +54,7 @@ class Record:
             if p.value == phone:
                 self.phones.remove(p)
                 return
-        raise ValueError(f"Номер телефону {phone} не існує")
+        raise ValueError
 
     def edit_phone(self, old_phone, new_phone):
         found = False
@@ -66,7 +66,7 @@ class Record:
                 break
 
         if not found:
-            raise ValueError(f"Номер телефону {old_phone} не існує")
+            raise ValueError 
 
     def find_phone(self, phone):
         for p in self.phones:
@@ -75,7 +75,7 @@ class Record:
         return None
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {', '.join(map(str, self.phones))}"
+        return f"Contact name: {self.name.value}, phones: {', '.join(str, self.phones)}"
 
 
 class AddressBook(UserDict):
@@ -91,7 +91,6 @@ class AddressBook(UserDict):
 
 
 def main():
-    address_book = AddressBook()
 
     while True:
         user_input = input(">>>: ")
@@ -100,61 +99,71 @@ def main():
             print("Goodbye!")
             break
         else:
-            handler, arguments = parser(user_input, address_book)
+            handler, arguments = parser(user_input)
             print(handler(*arguments))
 
 
-def parser(user_input: str, address_book: AddressBook):
+def parser(user_input: str):
     COMMANDS = {
         "Hello": hello_func,
         "Add": add_func,
         "Change": change_func,
         "Phone": search_func,
-        "Show All": show_func
+        "Show All": show_func,
+        "Del": delete_func
     }
 
     user_input = user_input.title()
 
     for kw, command in COMMANDS.items():
         if user_input.startswith(kw):
-            return command, user_input[len(kw):].strip().split(), address_book
+            return command, user_input[len(kw):].strip().split()
     return unknown_command, []
 
 
 @deco_error
-def add_func(*args, address_book: AddressBook):
+def add_func(*args):
     name = args[0]
     record = Record(name)
-    for phone_number in args[1:]:
+    phone_numbers = args[1:]
+    for phone_number in phone_numbers:
         record.add_phone(phone_number)
     address_book.add_record(record)
-    return f"User {name} has been added to the phone book with phone number(s) {', '.join(args[1:])}"
+    return f"User {name} has been added to the phone book with phone number(s) {', '.join(phone_numbers)}"
 
 
 @deco_error
-def change_func(*args, address_book: AddressBook):
+def change_func(*args):
     name = args[0]
-    phone = args[1]
+    phone_numbers = args[1:]
     record = address_book.find(name)
     if record:
-        record.edit_phone(phone)
-        return f"Phone number for user {name} has been changed to {phone}"
+        for phone in phone_numbers:
+            record.edit_phone(phone, phone)
+        return f"Phone number for user {name} has been changed to {', '.join(phone_numbers)}"
     else:
-        raise KeyError(f"No contact found for {name}")
+        raise KeyError
+    
+
+@deco_error
+def delete_func(*args):
+    name = args[0]
+    address_book.delete(name)
+    return f"User {name} has been deleted from the phone book"
 
 
 @deco_error
-def search_func(*args, address_book: AddressBook):
+def search_func(*args):
     name = args[0]
     record = address_book.find(name)
     if record:
         return str(record)
     else:
-        raise KeyError(f"No contact found for {name}")
+        raise KeyError
 
 
 @deco_error
-def show_func(*args, address_book: AddressBook):
+def show_func(*args):
     return str(address_book)
 
 
@@ -164,6 +173,9 @@ def unknown_command():
 
 def hello_func():
     return "How can I help you?"
+
+
+address_book = AddressBook()
 
 
 if __name__ == '__main__':
