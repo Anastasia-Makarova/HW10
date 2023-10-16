@@ -71,7 +71,7 @@ class Record:
     def find_phone(self, phone):
         for p in self.phones:
             if p.value == phone:
-                return p.value
+                return p
         return None
 
     def __str__(self):
