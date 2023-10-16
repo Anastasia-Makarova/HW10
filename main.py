@@ -75,7 +75,7 @@ class Record:
         return None
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {', '.join(str, self.phones)}"
+        return f"Contact name: {self.name.value}, phones: {', '.join(str(p) for p in self.phones)}"
 
 
 class AddressBook(UserDict):
@@ -88,6 +88,9 @@ class AddressBook(UserDict):
     def delete(self, name):
         if name in self.data:
             del self.data[name]
+        
+    def __str__(self) -> str:
+        return "\n".join(str(r) for r in self.data.values())
 
 
 def main():
